@@ -1,1 +1,6 @@
-# node_menu_item_visibility_default_behaviour
+# Node menu item visibility default behaviour
+Thanks to
+
+https://github.com/rogercodina/node_menusettings_visibility_checkbox
+
+My module just adds an ability to configure a defaulty behavior of menu item visibility on node creation or editing on content type form.
