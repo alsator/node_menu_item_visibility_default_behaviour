@@ -1,0 +1,5 @@
+name = Node menu item visibility default behaviour
+description = Allows to set default visibility behaviour of menu item on node creation/edit on content type configuration level.
+version = "7.x-0.1"
+core = "7.x"
+package = Other

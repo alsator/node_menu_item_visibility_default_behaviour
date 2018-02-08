@@ -1,0 +1,96 @@
+<?php
+
+/**
+ * Implementation of hook_form_alter().
+ */
+function node_menu_item_visibility_default_behaviour_form_alter(&$form, $form_state, $form_id) {
+	
+	if ($form_id == 'node_type_form') {
+		$form['menu']['default_node_menu_item_visibility_default_behaviour_show_hide'] = array(
+			'#type' => 'checkbox',
+			'#title' => t('Show menu item by default'),
+			'#default_value' => variable_get('default_node_menu_item_visibility_default_behaviour_show_hide_' . $form['#node_type']->type, true),
+			'#weight' => 50
+		);
+	}
+	
+	elseif (preg_match('/_node_form$/', $form_id) == 1 && isset($form['menu'])) {
+		
+		$content_type = str_replace('_node_form', '', $form_id);
+		
+		$form['menu']['enabled']['#ajax'] = array('callback' => 'node_menu_item_visibility_default_behaviour_show_hide');
+		
+		$mlid = 0;
+		if (isset($form['menu']['link']['mlid']['#value']) && $form['menu']['link']['mlid']['#value'] > 0) {
+			$mlid = $form['menu']['link']['mlid']['#value'];
+			$menuItem = menu_link_load($mlid);
+		}
+		
+		$form['menu']['mitem_enabled'] = array(
+			'#type' => 'checkbox',
+			'#title' => t('Show in menu'),
+			'#default_value' => (($mlid == 0) ? variable_get('default_node_menu_item_visibility_default_behaviour_show_hide_' . $content_type, true) : ($menuItem['hidden'] == false) ? true : false),
+			'#weight' => 0
+		);
+		
+		array_unshift($form['#submit'], 'node_menu_item_visibility_default_behaviour_submit');
+		
+		drupal_add_js(node_menu_item_visibility_default_behaviour_init_js(), 'inline');
+	}
+}
+
+/**
+ * Custom submit handler.
+ */
+function node_menu_item_visibility_default_behaviour_submit(&$form, $form_state) {
+	$_SESSION['mitemenabled'] = $form['menu']['mitem_enabled']['#value'];
+}
+
+/**
+ * Implementation of hook_node_presave().
+ */
+function node_menu_item_visibility_default_behaviour_node_presave($node) {
+	if (isset($node->menu['enabled']) && ($node->menu['enabled'] == 1) && isset($_SESSION['mitemenabled'])) {
+		if ($_SESSION['mitemenabled'] == 1) {
+			$node->menu['hidden'] = 0;
+		}
+		else {
+			$node->menu['hidden'] = 1;
+		}
+		unset($_SESSION['mitemenabled']);
+	}
+}
+
+/**
+ * Ajax callback. Show/hides mitem_enabled checkbox.
+ */
+function node_menu_item_visibility_default_behaviour_show_hide(&$form, $form_state) {
+	$commands = array();
+	$commands[] = ajax_command_invoke('.form-item-menu-mitem-enabled', 'toggle');
+	return array('#type' => 'ajax', '#commands' => $commands);
+}
+
+/**
+ * Show/hide mitem_enabled checkbox on page ready depending on enabled item checkbox
+ */
+function node_menu_item_visibility_default_behaviour_init_js() {
+	
+	$js = '
+  jQuery( document ).ready(function() {
+    if(jQuery("#edit-menu-enabled").is(":checked")) {
+      jQuery(".form-item-menu-mitem-enabled").show();
+    } else {
+      jQuery(".form-item-menu-mitem-enabled").hide();
+    }
+  });
+  ';
+	
+	return $js;
+}
+
+/*
+ * implements hook_node_type_delete
+ */
+function node_menu_item_visibility_default_behaviour_node_type_delete($info){
+	variable_del('default_node_menu_item_visibility_default_behaviour_show_hide_' . $info->type);
+}
