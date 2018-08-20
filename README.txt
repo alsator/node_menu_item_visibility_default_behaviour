@@ -1,4 +1,3 @@
-# Node menu item visibility default behaviour
 Thanks to
 
 https://github.com/rogercodina/node_menusettings_visibility_checkbox
